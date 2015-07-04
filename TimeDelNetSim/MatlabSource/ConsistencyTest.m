@@ -1,7 +1,9 @@
-addpath('..\..\x64\Release_Exe\');
-
+rmpath('..\..\x64\Debug_Lib');
+addpath('..\..\x64\Release_Lib');
+% addpath('export_fig-master');
 
 %%
+rng('default');
 rng(25);
 N = 1000;
 E = 0.8;
@@ -19,7 +21,7 @@ RecurrentNetParams.MeanInhtoExc = -0.7*2000/N;
 RecurrentNetParams.Var          = 0.2;
 RecurrentNetParams.DelayRange   = 20;
 
-[A, Ninh, Weights, Delays] = RecurrentNetwork(RecurrentNetParams);
+[A, Ninh, Weights, Delays] = WorkingMemNet();
 
 a = 0.02*ones(N,1);
 b = 0.2*ones(N,1);
@@ -50,29 +52,34 @@ InputStruct.NEnd   = int32(NEndVect);
 InputStruct.Weight = single(Weights);
 InputStruct.Delay  = single(Delays);
 
-InputStruct.onemsbyTstep          = int32(4);
-InputStruct.NoOfms                = int32(80000);
+InputStruct.V = single(-65*ones(N,1));
+InputStruct.U = single(0.2*InputStruct.V);
+
+InputStruct.onemsbyTstep          = int32(1);
+InputStruct.NoOfms                = int32(60*60*1000);
 InputStruct.DelayRange            = int32(RecurrentNetParams.DelayRange);
-InputStruct.StorageStepSize       = int32(1000);
+InputStruct.StorageStepSize       = int32(30000);
 InputStruct.OutputControl         = strjoin(OutputOptions);
-InputStruct.StatusDisplayInterval = int32(8000);
+InputStruct.StatusDisplayInterval = int32(2000);
+InputStruct.IExtGenState          = uint32(30);
 
 InputStruct.OutputFile = 'SimResults1000DebugSparseLong.mat';
 save('../Data/InputData.mat', 'InputStruct');
 
-% [OutputVars, StateVars, FinalState, InitState] = TimeDelNetSim(InputStruct);
+% [OutputVarsSparse, StateVarsSparse, FinalStateSparse, InitStateSparse] = TimeDelNetSimMEX_Lib(InputStruct);
+clear functions;
 % Run the program after this
+
 %% Get Detailed vector from Initial State 
 % This is to check correctness of initial state return with default inputs
 
-load('../Data/SimResults1000DebugSparseLong.mat', 'InitState');
+% load('../Data/SimResults1000DebugSparseLong.mat', 'InitState');
 
 % Setting up input settings
 OutputOptions = { ...
 	'V', ...
 	'Iin', ...
 	'Itot', ...
-	'Irand', ...
 	'Initial', ...
 	'Final'
 	};
@@ -81,7 +88,7 @@ OutputOptions = { ...
 clear InputStruct;
 
 % Getting Midway state
-InputStruct = ConvertStatetoInitialCond(InitState);
+InputStruct = ConvertStatetoInitialCond(InitStateSparse);
 InputStruct.a = single(a);
 InputStruct.b = single(b);
 InputStruct.c = single(c);
@@ -89,31 +96,35 @@ InputStruct.d = single(d);
 
 InputStruct.NStart = int32(NStartVect);
 InputStruct.NEnd   = int32(NEndVect);
-InputStruct.Weight = single(Weights);
+% InputStruct.Weight = single(Weights);
 InputStruct.Delay  = single(Delays);
 
 InputStruct.onemsbyTstep          = int32(4);
-InputStruct.NoOfms                = int32(2000);
+InputStruct.NoOfms                = int32(8000);
 InputStruct.DelayRange            = int32(RecurrentNetParams.DelayRange);
 InputStruct.StorageStepSize       = int32(0);
 InputStruct.OutputControl         = strjoin(OutputOptions);
 InputStruct.StatusDisplayInterval = int32(8000);
 
 InputStruct.OutputFile = 'SimResults1000DebugDetailedfromInit.mat';
-save('../Data/InputData.mat', 'InputStruct');
+% save('../Data/InputData.mat', 'InputStruct');
+[OutputVarsDetailed1, StateVarsDetailed1, FinalStateDetailed1, InitStateDetailed1] = TimeDelNetSim(InputStruct);
+clear functions;
 % Run the program
 %% Loading Relevent Data
 
 % Loading and renaming variables for detailed simulation
 load('../Data/SimResults1000DebugDetailedfromInit.mat');
-clear OutputVarsDetailed StateVarsDetailed InitStateDetailed FinalStateDetailed;
-OutputVarsDetailed = OutputVars;
-StateVarsDetailed = StateVars;
-InitStateDetailed = InitState;
-FinalStateDetailed = FinalState;
+clear OutputVarsDetailed1 StateVarsDetailed1 InitStateDetailed1 FinalStateDetailed1;
+OutputVarsDetailed1 = OutputVars;
+StateVarsDetailed1 = StateVars;
+InitStateDetailed1 = InitState;
+FinalStateDetailed1 = FinalState;
 clear OutputVars StateVars InitState FinalState;
 
+%%
 % Loading and renaming variables for sparse simulation
+% load('../Data/SimResults1000DebugSparseLong.mat');
 load('../Data/SimResults1000DebugSparseLong.mat');
 clear OutputVarsSparse StateVarsSparse InitStateSparse FinalStateSparse;
 OutputVarsSparse = OutputVars;
@@ -123,7 +134,7 @@ FinalStateSparse = FinalState;
 clear OutputVars StateVars InitState FinalState;
 
 %% Performing Relevant Tests
-max(abs(StateVarsSparse.V(:,1) - StateVarsDetailed.V(:, 4000)))
+max(abs(StateVarsSparse.V(:,1) - StateVarsDetailed.V(:, 16000)))
 
 %% Getting Detailed using Final State Returned
 % This is to test accurate return of final state
@@ -132,15 +143,15 @@ OutputOptions = { ...
 	'V', ...
 	'Iin', ...
 	'Itot', ...
-	'Irand', ...
-	'Initial', ...
-	'Final'
+	'Final', ...
+ 	'Irand' ...
+ 	'Initial', ...
 	};
 % Clearing InputStruct
 clear InputStruct;
 
 % Getting Midway state
-InputStruct = ConvertStatetoInitialCond(FinalStateDetailed);
+InputStruct = ConvertStatetoInitialCond(FinalStateDetailed1);
 InputStruct.a = single(a);
 InputStruct.b = single(b);
 InputStruct.c = single(c);
@@ -148,11 +159,11 @@ InputStruct.d = single(d);
 
 InputStruct.NStart = int32(NStartVect);
 InputStruct.NEnd   = int32(NEndVect);
-InputStruct.Weight = single(Weights);
+% InputStruct.Weight = single(Weights);
 InputStruct.Delay  = single(Delays);
 
 InputStruct.onemsbyTstep          = int32(4);
-InputStruct.NoOfms                = int32(2000);
+InputStruct.NoOfms                = int32(8000);
 InputStruct.DelayRange            = int32(RecurrentNetParams.DelayRange);
 InputStruct.StorageStepSize       = int32(0);
 InputStruct.OutputControl         = strjoin(OutputOptions);
@@ -171,7 +182,7 @@ FinalStateDetailed = FinalState;
 clear OutputVars StateVars InitState FinalState;
 
 %% Performing Relevant Tests
-max(abs(StateVarsDetailed.V(:,4000) - StateVarsSparse.V(:,3)))
+max(abs(StateVarsDetailed.V(:,16000) - StateVarsSparse.V(:,3)))
 
 %% Getting Detailed using Intermediate Sparse State Returned
 % This tests the correctness of the input of initial conditions and
@@ -179,18 +190,19 @@ max(abs(StateVarsDetailed.V(:,4000) - StateVarsSparse.V(:,3)))
 
 
 OutputOptions = { ...
-	'V', ...
-	'Iin', ...
-	'Itot', ...
-	'Irand', ...
-	'Initial', ...
-	'Final'
+	'SpikeList', ...
+	'Final' %, ...
+%     'Itot', ...
+%  	'V', ...
+%  	'U', ...
+% 	'WeightDeriv'
 	};
 % Clearing InputStruct
 clear InputStruct;
 
 % Getting Midway state
-InputStruct = ConvertStatetoInitialCond(StateVarsSparse, 4*4000);
+InputStruct = ConvertStatetoInitialCond(StateVarsSparse, (50*60+0)*1000);
+
 InputStruct.a = single(a);
 InputStruct.b = single(b);
 InputStruct.c = single(c);
@@ -198,19 +210,21 @@ InputStruct.d = single(d);
 
 InputStruct.NStart = int32(NStartVect);
 InputStruct.NEnd   = int32(NEndVect);
-InputStruct.Weight = single(Weights);
+% InputStruct.Weight = single(Weights);
 InputStruct.Delay  = single(Delays);
 
-InputStruct.onemsbyTstep          = int32(4);
-InputStruct.NoOfms                = int32(2000);
+InputStruct.onemsbyTstep          = int32(1);
+InputStruct.NoOfms                = int32(30000);
 InputStruct.DelayRange            = int32(RecurrentNetParams.DelayRange);
 InputStruct.StorageStepSize       = int32(0);
 InputStruct.OutputControl         = strjoin(OutputOptions);
-InputStruct.StatusDisplayInterval = int32(8000);
+InputStruct.StatusDisplayInterval = int32(2000);
 
-InputStruct.OutputFile = 'SimResults1000DebugDetailedfromInter.mat';
-save('../Data/InputData.mat', 'InputStruct');
+% InputStruct.OutputFile = 'SimResults1000DebugDetailedfromInter.mat';
+% save('../Data/InputData.mat', 'InputStruct');
 
+[OutputVarsDetailed, StateVarsDetailed, FinalStateDetailed, InitStateDetailed] = TimeDelNetSim(InputStruct);
+clear functions;
 %% Loading Relevant Data
 load('../Data/SimResults1000DebugDetailedfromInter.mat');
 clear OutputVarsDetailed StateVarsDetailed InitStateDetailed FinalStateDetailed;
@@ -222,51 +236,3 @@ clear OutputVars StateVars InitState FinalState;
 
 %% Performing Relevant Tests
 max(abs(StateVarsDetailed.V(:,8000) - StateVarsSparse.V(:,6)))
-
-%% Testing SpikeList generation
-
-%% Get Detailed vector from Initial State 
-% This is to check correctness of initial state return with default inputs
-
-load('../Data/SimResults1000DebugSparseLong.mat', 'InitState');
-
-% Setting up input settings
-OutputOptions = { ...
-	'SpikeList', ...
-	'Initial'
-	};
-
-% Clearing InputStruct
-clear InputStruct;
-
-% Getting Midway state
-InputStruct = ConvertStatetoInitialCond(InitState);
-InputStruct.a = single(a);
-InputStruct.b = single(b);
-InputStruct.c = single(c);
-InputStruct.d = single(d);
-
-InputStruct.NStart = int32(NStartVect);
-InputStruct.NEnd   = int32(NEndVect);
-InputStruct.Weight = single(Weights);
-InputStruct.Delay  = single(Delays);
-
-InputStruct.onemsbyTstep          = int32(4);
-InputStruct.NoOfms                = int32(80000);
-InputStruct.DelayRange            = int32(RecurrentNetParams.DelayRange);
-InputStruct.StorageStepSize       = int32(0);
-InputStruct.OutputControl         = strjoin(OutputOptions);
-InputStruct.StatusDisplayInterval = int32(8000);
-
-InputStruct.OutputFile = 'SimResults1000DebugSpikeListfromInit.mat';
-save('../Data/InputData.mat', 'InputStruct');
-
-%% Loading Relevant Data
-
-load('../Data/SimResults1000DebugSpikeListfromInit.mat');
-clear OutputVarsDetailed StateVarsDetailed InitStateDetailed FinalStateDetailed;
-OutputVarsDetailed = OutputVars;
-StateVarsDetailed = StateVars;
-InitStateDetailed = InitState;
-FinalStateDetailed = FinalState;
-clear OutputVars StateVars InitState FinalState;

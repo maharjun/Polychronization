@@ -18,10 +18,12 @@ end
 
 InputStruct.V = StateStruct.V(:, timeIndex);
 InputStruct.U = StateStruct.U(:, timeIndex);
-InputStruct.Iin1 = StateStruct.Iin1(:, timeIndex);
-InputStruct.Iin2 = StateStruct.Iin2(:, timeIndex);
-InputStruct.Irand = StateStruct.Irand(:, timeIndex);
-InputStruct.GenState = StateStruct.GenState(:, timeIndex);
+InputStruct.Iin = StateStruct.Iin(:, timeIndex);
+InputStruct.WeightDeriv = StateStruct.WeightDeriv(:, timeIndex);
+InputStruct.Weight = StateStruct.Weight(:, timeIndex);
+
+InputStruct.Iext = StateStruct.Iext(:, timeIndex);
+InputStruct.IExtGenState = StateStruct.IExtGenState(:, timeIndex);
 InputStruct.Time = StateStruct.Time(timeIndex);
 
 InputStruct.CurrentQIndex = StateStruct.CurrentQIndex(timeIndex);
