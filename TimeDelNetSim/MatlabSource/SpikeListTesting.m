@@ -1,7 +1,7 @@
 %% Convert Spike to spatio(neuro)-temporal Data.
 
-BegTime = double((18)*1000*InputStruct.onemsbyTstep);
-EndTime = double((20)*1000*InputStruct.onemsbyTstep);
+BegTime = double((5*60 + 20)*1000*InputStruct.onemsbyTstep);
+EndTime = double((5*60 + 24)*1000*InputStruct.onemsbyTstep);
 
 RelTimes = StateVarsDetailed.Time >= BegTime & StateVarsDetailed.Time < EndTime;
 BegTimeIndex = find(RelTimes, 1, 'first');
