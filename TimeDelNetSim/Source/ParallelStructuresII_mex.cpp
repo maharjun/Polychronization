@@ -10,6 +10,7 @@
 #include "..\Headers\Network.hpp"
 #include "..\Headers\NeuronSim.hpp"
 #include "..\..\RandomNumGen\Headers\FiltRandomTBB.hpp"
+#include "..\..\MexMemoryInterfacing\Headers\GenericMexIO.hpp"
 
 #include <emmintrin.h>
 #include <smmintrin.h>
@@ -43,12 +44,12 @@ void CountingSort(int N, MexVector<Synapse> &Network, MexVector<size_t> &indirec
 
 void CurrentUpdate::operator () (const tbb::blocked_range<int*> &BlockedRange) const{
 	const float &I0 = IntVars.I0;
-	auto &Network              = IntVars.Network;
+	auto &Network           = IntVars.Network;
 	auto &Iin                  = IntVars.Iin;
-	auto &LastSpikedTimeSyn    = IntVars.LSTSyn;
+	auto &LastSpikedTimeSyn = IntVars.LSTSyn;
 	auto &LastSpikedTimeNeuron = IntVars.LSTNeuron;
 	auto &WeightDeriv          = IntVars.WeightDeriv;
-	auto &time                 = IntVars.Time;
+	auto &time              = IntVars.Time;
 	auto &ExpVect              = IntVars.ExpVect;
 
 	auto &STDPMaxWinLen        = IntVars.STDPMaxWinLen;
@@ -123,7 +124,7 @@ void NeuronSimulate::operator() (tbb::blocked_range<int> &Range) const{
 
 			Unew = Unow[j] + (Neurons[j].a*(Neurons[j].b*Vnew - Unow[j])) / onemsbyTstep;
 			
-			Vnow[j] = (Vnew > -100) ? Vnew : -100;
+			Vnow[j] = (Vnew > -100)? Vnew: -100;
 			Unow[j] = Unew;
 
 			//Implementing Network Computation in case a Neuron has spiked in the current interval
@@ -203,7 +204,7 @@ void StateVarsOutStruct::initialize(const InternalVars &IntVars) {
 	size_t TimeDimLen;  // beta is the time offset from Tbeg which 
 	// corresponds to the first valid storage location
 	if (StorageStepSize){
-		TimeDimLen = (nSteps - beta) / (StorageStepSize*onemsbyTstep) + 1;	//No. of times (StorageStepSize * onemsbyTstep)|time happens
+		TimeDimLen = (nSteps >= beta)?(nSteps - beta) / (StorageStepSize*onemsbyTstep) + 1 : 0;	//No. of times (StorageStepSize * onemsbyTstep)|time happens
 	}
 	else{
 		TimeDimLen = nSteps;
@@ -257,7 +258,7 @@ void OutputVarsStruct::initialize(const InternalVars &IntVars){
 	auto beta = IntVars.beta;
 
 	if (IntVars.StorageStepSize){
-		TimeDimLen = (nSteps - beta) / (StorageStepSize*onemsbyTstep) + 1;	//No. of times (StorageStepSize * onemsbyTstep)|time happens
+		TimeDimLen = (nSteps >= beta) ? (nSteps - beta) / (StorageStepSize*onemsbyTstep) + 1 : 0;	//No. of times (StorageStepSize * onemsbyTstep)|time happens
 	}
 	else{
 		TimeDimLen = nSteps;
@@ -779,7 +780,7 @@ void SimulateParallel(
 			#ifdef MEX_LIB
 				mexErrMsgTxt("Epileptic shit");
 			#elif defined MEX_EXE
-				printf("Epilepsy Nyuh!!\n");
+				WriteOutput("Epilepsy Nyuh!!\n");
 			#endif
 				return;
 			}
@@ -824,12 +825,7 @@ void SimulateParallel(
 
 		// Status Display Section
 		if (!(time % StatusDisplayInterval)){
-		#ifdef MEX_LIB
-			mexPrintf("Completed  %d steps with Total no. of Spikes = %d\n", time/(1000*onemsbyTstep), maxSpikeno);
-			mexEvalString("drawnow");
-		#elif defined MEX_EXE
-			printf("Completed  %d steps with Total no. of Spikes = %d\n", time / (1000 * onemsbyTstep), maxSpikeno);
-		#endif
+			WriteOutput("Completed  %d steps with Total no. of Spikes = %d\n", time / (1000 * onemsbyTstep), maxSpikeno);
 			maxSpikeno = 0;
 		}
 	}
@@ -839,10 +835,10 @@ void SimulateParallel(
 		IntVars.DoSingleStateOutput(FinalStateOutput);
 	}
 
-	cout << "CurrentExt Generation Time = " << IExtGenTime / 1000 << "millisecs" << endl;
-	cout << "Current Update Time = " << IUpdateTime / 1000 << "millisecs" << endl;
-	cout << "Spike Storage Time = " << SpikeStoreTime / 1000 << "millisecs" << endl;
-	cout << "Nuron Calculation Time = " << NeuronCalcTime / 1000 << "millisecs" << endl;
-	cout << "Output Time = " << OutputTime / 1000 << "millisecs" << endl;
+	WriteOutput("CurrentExt Generation Time = %d millisecs\n", IExtGenTime / 1000);
+	WriteOutput("Current Update Time = %d millisecs\n", IUpdateTime / 1000);
+	WriteOutput("Spike Storage Time = %d millisecs\n", SpikeStoreTime / 1000);
+	WriteOutput("Nuron Calculation Time = %d millisecs\n", NeuronCalcTime / 1000);
+	WriteOutput("Output Time = %d millisecs\n", OutputTime / 1000);
 }
 
