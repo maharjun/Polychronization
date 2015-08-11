@@ -98,14 +98,32 @@ struct InputArgs{
 	MexVector<MexVector<int> > SpikeQueue;
 	MexVector<int> LSTNeuron;
 	MexVector<int> LSTSyn;
-	int onemsbyTstep;
-	int NoOfms;
-	int DelayRange;
-	int Time;
-	int CurrentQIndex;
-	int OutputControl;
-	int StorageStepSize;
-	int StatusDisplayInterval;
+    
+	// Compulsory Simulation Parameters
+	size_t onemsbyTstep;
+	size_t NoOfms;
+	size_t DelayRange;
+
+	// Optional Simulation Parameters
+	size_t OutputControl;
+	size_t StorageStepSize;
+	size_t StatusDisplayInterval;
+
+	// Optional Simulation Algorithm Parameters
+	float I0;
+	float CurrentDecayFactor;
+	float IExtScaleFactor;
+	float IExtDecayFactor;
+	float STDPDecayFactor;
+	int   STDPMaxWinLen;
+	float MaxSynWeight;
+	float W0;
+	float alpha;
+	float StdDev;
+
+	// Scalar State Variables
+	size_t Time;
+	size_t CurrentQIndex;
 
 	InputArgs() :
 		Network(),
@@ -127,16 +145,24 @@ struct InternalVars{
 	size_t NExc;
 	size_t M;
 	size_t MExc;
-	size_t i;		//This is the most important loop index that is definitely a state variable
-				// and plays a crucial role in deciding the index into which the output must be performed
-	size_t Time;	// must be initialized befor beta
-	size_t beta;	// This is another parameter that plays a rucial role when storing sparsely.
-				// It is the first value of i for which the sparse storage must be done.
-				// goes from 1 to StorageStepSize * onemsbyTstep
+	size_t i;       //This is the most important loop index that is definitely a state variable
+	                // and plays a crucial role in deciding the index into which the output must be performed
+	size_t Time;    // must be initialized befor beta
+	size_t beta;    // This is another parameter that plays a rucial role when storing sparsely.
+	                // It is the first value of i for which the sparse storage must be done.
+	                // goes from 1 to StorageStepSize * onemsbyTstep
+	
+	// Compulsory Simulation Parameters
 	size_t onemsbyTstep;
 	size_t NoOfms;
 	size_t DelayRange;
-	size_t CurrentQIndex;
+	
+	// Optional Simulation Parameters
+	size_t OutputControl;
+	size_t StorageStepSize;
+	const size_t StatusDisplayInterval;
+
+	// Optional Simulation Algorithm Parameters
 	const float I0;
 	const float CurrentDecayFactor;
 	const float IExtScaleFactor;
@@ -148,9 +174,9 @@ struct InternalVars{
 	const float alpha;
 	const float StdDev;
 
-	size_t OutputControl;
-	size_t StorageStepSize;
-	const size_t StatusDisplayInterval;
+	// Scalar State Variables
+	// Time is defined earlier for reasons of initialization sequence
+	size_t CurrentQIndex;
 
 	// Parameters that control C=Spike Storage Buffering
 	size_t CacheBuffering;
@@ -235,16 +261,16 @@ struct InternalVars{
 		NoOfms             (IArgs.NoOfms),
 		DelayRange         (IArgs.DelayRange),
 		CacheBuffering     (128),
-		I0                 (1.0f),
-		STDPMaxWinLen      (int(onemsbyTstep*(log(0.001) / log(pow((double)STDPDecayFactor, (double)onemsbyTstep))))),
-		CurrentDecayFactor (powf(1.0f / 3.5f, 1.0f / onemsbyTstep)),
-		IExtDecayFactor    (1.0f / 2),
-		IExtScaleFactor    (2.333f*20),
-		STDPDecayFactor    (powf(0.95f, 1.0f / onemsbyTstep)),
-		W0                 (0.1f),
-		MaxSynWeight       (10.0),
-		alpha              (0.5), 
-		StdDev             (3.5)
+		I0                 (IArgs.I0),
+		STDPMaxWinLen      (IArgs.STDPMaxWinLen),
+		CurrentDecayFactor (IArgs.CurrentDecayFactor),
+		IExtDecayFactor    (IArgs.IExtDecayFactor),
+		IExtScaleFactor    (IArgs.IExtScaleFactor),
+		STDPDecayFactor    (IArgs.STDPDecayFactor),
+		W0                 (IArgs.W0),
+		MaxSynWeight       (IArgs.MaxSynWeight),
+		alpha              (IArgs.alpha),
+		StdDev             (IArgs.StdDev)
 	{
 
 		// Setting value of beta

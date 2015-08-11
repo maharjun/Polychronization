@@ -1,5 +1,6 @@
 rmpath('..\..\x64\Debug_Lib');
 addpath('..\..\x64\Release_Lib');
+% addpath('export_fig-master');
 
 %%
 rng('default');
@@ -55,18 +56,22 @@ InputStruct.V = single(-65*ones(N,1));
 InputStruct.U = single(0.2*InputStruct.V);
 
 InputStruct.onemsbyTstep          = int32(4);
-InputStruct.NoOfms                = int32(80000);
+InputStruct.NoOfms                = int32(80*1000);
 InputStruct.DelayRange            = int32(RecurrentNetParams.DelayRange);
 InputStruct.StorageStepSize       = int32(1000);
 InputStruct.OutputControl         = strjoin(OutputOptions);
 InputStruct.StatusDisplayInterval = int32(8000);
 InputStruct.IExtGenState          = uint32(30);
 
+InputStruct.I0 = single(1.3);
+InputStruct.STDPDecayFactor = single(0.85^(1.0 / double(InputStruct.onemsbyTstep)));
+InputStruct.STDPMaxWinLen = int32(100);
+
 InputStruct.OutputFile = 'SimResults1000DebugSparseLong.mat';
 save('../Data/InputData.mat', 'InputStruct');
 
-% [OutputVarsSparse, StateVarsSparse, FinalStateSparse, InitStateSparse] = TimeDelNetSim(InputStruct);
-% clear functions;
+% [OutputVarsSparse, StateVarsSparse, FinalStateSparse, InitStateSparse] = TimeDelNetSimMEX_Lib(InputStruct);
+clear functions;
 % Run the program after this
 cd ..
 ! "..\x64\Release_Exe\TimeDelNetSim.exe"
@@ -108,8 +113,14 @@ InputStruct.StorageStepSize       = int32(0);
 InputStruct.OutputControl         = strjoin(OutputOptions);
 InputStruct.StatusDisplayInterval = int32(8000);
 
+InputStruct.I0 = single(1.3);
+InputStruct.STDPDecayFactor = single(0.85^(1.0 / double(InputStruct.onemsbyTstep)));
+InputStruct.STDPMaxWinLen = int32(100);
+
 InputStruct.OutputFile = 'SimResults1000DebugDetailedfromInit.mat';
 save('../Data/InputData.mat', 'InputStruct');
+% [OutputVarsDetailed1, StateVarsDetailed1, FinalStateDetailed1, InitStateDetailed1] = TimeDelNetSim(InputStruct);
+clear functions;
 % Run the program
 cd ..
 ! "..\x64\Release_Exe\TimeDelNetSim.exe"
@@ -125,6 +136,7 @@ InitStateDetailed1 = InitState;
 FinalStateDetailed1 = FinalState;
 clear OutputVars StateVars InitState FinalState;
 
+%%
 % Loading and renaming variables for sparse simulation
 load('../Data/SimResults1000DebugSparseLong.mat');
 clear OutputVarsSparse StateVarsSparse InitStateSparse FinalStateSparse;
@@ -170,8 +182,14 @@ InputStruct.StorageStepSize       = int32(0);
 InputStruct.OutputControl         = strjoin(OutputOptions);
 InputStruct.StatusDisplayInterval = int32(8000);
 
+InputStruct.I0 = single(1.3);
+InputStruct.STDPDecayFactor = single(0.85^(1.0 / double(InputStruct.onemsbyTstep)));
+InputStruct.STDPMaxWinLen = int32(100);
+
 InputStruct.OutputFile = 'SimResults1000DebugDetailedfromFinal.mat';
 save('../Data/InputData.mat', 'InputStruct');
+
+% Run Program
 cd ..
 ! "..\x64\Release_Exe\TimeDelNetSim.exe"
 cd MatlabSource
@@ -222,19 +240,21 @@ InputStruct.StorageStepSize       = int32(0);
 InputStruct.OutputControl         = strjoin(OutputOptions);
 InputStruct.StatusDisplayInterval = int32(8000);
 
+InputStruct.I0 = single(1.3);
+InputStruct.STDPDecayFactor = single(0.85^(1.0 / double(InputStruct.onemsbyTstep)));
+InputStruct.STDPMaxWinLen = int32(100);
+
+% InputStruct.OutputFile = 'SimResults1000DebugDetailedfromInter.mat';
+% save('../Data/InputData.mat', 'InputStruct');
+
 [OutputVarsDetailedInter, StateVarsDetailedInter, FinalStateDetailedInter, InitStateDetailedInter] = TimeDelNetSim(InputStruct);
 clear functions;
 
 %% Performing Relevant Tests
 max(abs(StateVarsDetailedInter.V(:,8000) - StateVarsSparse.V(:,6)))
 
-%% Testing Spike generation
-% Setting up input settings
-OutputOptions = { ...
-	'SpikeList', ...
-	'Initial'
-	};
-
+%% Spike Plots Generation
+OutputOptions = {'SpikeList', 'Initial'};
 % Clearing InputStruct
 clear InputStruct;
 
@@ -257,4 +277,8 @@ InputStruct.StorageStepSize       = int32(0);
 InputStruct.OutputControl         = strjoin(OutputOptions);
 InputStruct.StatusDisplayInterval = int32(8000);
 
+InputStruct.OutputFile = 'SimResults1000DebugSparseLong.mat';
+save('../Data/InputData.mat', 'InputStruct');
+
 [OutputVarsSpikeList, StateVarsSpikeList, FinalStateSpikeList, InitStateSpikeList] = TimeDelNetSim(InputStruct);
+clear functions;
