@@ -63,6 +63,10 @@ InputStruct.OutputControl         = strjoin(OutputOptions);
 InputStruct.StatusDisplayInterval = int32(2000);
 InputStruct.IExtGenState          = uint32(30);
 
+InputStruct.I0 = single(1.3);
+InputStruct.STDPDecayFactor = single(0.85^(1.0 / double(InputStruct.onemsbyTstep)));
+InputStruct.STDPMaxWinLen = int32(100);
+
 InputStruct.OutputFile = 'SimResults1000DebugSparseLong.mat';
 save('../Data/InputData.mat', 'InputStruct');
 
@@ -107,6 +111,10 @@ InputStruct.DelayRange            = int32(RecurrentNetParams.DelayRange);
 InputStruct.StorageStepSize       = int32(0);
 InputStruct.OutputControl         = strjoin(OutputOptions);
 InputStruct.StatusDisplayInterval = int32(8000);
+
+InputStruct.I0 = single(1.3);
+InputStruct.STDPDecayFactor = single(0.85^(1.0 / double(InputStruct.onemsbyTstep)));
+InputStruct.STDPMaxWinLen = int32(100);
 
 InputStruct.OutputFile = 'SimResults1000DebugDetailedfromInit.mat';
 save('../Data/InputData.mat', 'InputStruct');
@@ -174,6 +182,10 @@ InputStruct.StorageStepSize       = int32(0);
 InputStruct.OutputControl         = strjoin(OutputOptions);
 InputStruct.StatusDisplayInterval = int32(8000);
 
+InputStruct.I0 = single(1.3);
+InputStruct.STDPDecayFactor = single(0.85^(1.0 / double(InputStruct.onemsbyTstep)));
+InputStruct.STDPMaxWinLen = int32(100);
+
 InputStruct.OutputFile = 'SimResults1000DebugDetailedfromFinal.mat';
 save('../Data/InputData.mat', 'InputStruct');
 
@@ -225,6 +237,10 @@ InputStruct.DelayRange            = int32(RecurrentNetParams.DelayRange);
 InputStruct.StorageStepSize       = int32(0);
 InputStruct.OutputControl         = strjoin(OutputOptions);
 InputStruct.StatusDisplayInterval = int32(2000);
+
+InputStruct.I0 = single(1.3);
+InputStruct.STDPDecayFactor = single(0.85^(1.0 / double(InputStruct.onemsbyTstep)));
+InputStruct.STDPMaxWinLen = int32(100);
 
 % InputStruct.OutputFile = 'SimResults1000DebugDetailedfromInter.mat';
 % save('../Data/InputData.mat', 'InputStruct');

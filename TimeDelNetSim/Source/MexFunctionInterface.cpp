@@ -111,18 +111,32 @@ void takeInputFromMatlabStruct(mxArray* MatlabInputStruct, InputArgs &InputArgLi
 	size_t N = mxGetNumberOfElements(mxGetField(MatlabInputStruct, 0, "a"));
 	size_t M = mxGetNumberOfElements(mxGetField(MatlabInputStruct, 0, "NStart"));
 
-	// get compulsory scalars
+	// set Cumpulsory Simulation Parameters
 	getInputfromStruct(MatlabInputStruct, "onemsbyTstep", InputArgList.onemsbyTstep, true);
 	getInputfromStruct(MatlabInputStruct, "NoOfms"      , InputArgList.NoOfms      , true);
 	getInputfromStruct(MatlabInputStruct, "DelayRange"  , InputArgList.DelayRange  , true);
 
-	// set default values of optional scalars / parameters
-	InputArgList.CurrentQIndex = 0;
-	InputArgList.Time = 0;
+	// set default values of Optional Simulation Parameters
 	InputArgList.StorageStepSize = DEFAULT_STORAGE_STEP;
 	InputArgList.OutputControl = 0;
 	InputArgList.StatusDisplayInterval = DEFAULT_STATUS_DISPLAY_STEP;
+	
+	// set default values of Optional Simulation Algorithm Parameters
+	InputArgList.I0                 = 1.0f;
+	InputArgList.STDPDecayFactor    = powf(0.95f, 1.0f / InputArgList.onemsbyTstep);
+	InputArgList.STDPMaxWinLen      = int(InputArgList.onemsbyTstep*(log(0.0001) / log(pow((double)InputArgList.STDPDecayFactor, (double)InputArgList.onemsbyTstep))));
+	InputArgList.CurrentDecayFactor = powf(1.0f / 3.5f, 1.0f / InputArgList.onemsbyTstep);
+	InputArgList.IExtDecayFactor    = 2.0f / 3;
+	InputArgList.IExtScaleFactor    = 20;
+	InputArgList.W0                 = 0.1f;
+	InputArgList.MaxSynWeight       = 10.0;
+	InputArgList.alpha              = 0.5; 
+	InputArgList.StdDev             = 3.5;
 
+	// set default values for Scalar State Variables
+	InputArgList.CurrentQIndex = 0;
+	InputArgList.Time = 0;
+	
 	float*      genFloatPtr[4];     // Generic float Pointers used around the place to access data
 	int*        genIntPtr[2];       // Generic int Pointers used around the place to access data
 	uint32_t*	genUIntPtr[1];		// Generic unsigned int Pointers used around the place to access data (generator bits)
@@ -149,14 +163,28 @@ void takeInputFromMatlabStruct(mxArray* MatlabInputStruct, InputArgs &InputArgLi
 		}),
 		2, "required_size", M, "is_required");
 
+	// Setting Values for Optional Simulation Algorithm Parameters
+	getInputfromStruct(MatlabInputStruct, "I0"                , InputArgList.I0                );
+	getInputfromStruct(MatlabInputStruct, "STDPDecayFactor"   , InputArgList.STDPDecayFactor   );
+	if (getInputfromStruct(MatlabInputStruct, "STDPMaxWinLen", InputArgList.STDPMaxWinLen, true, true)){
+		InputArgList.STDPMaxWinLen = int(InputArgList.onemsbyTstep*(log(0.0001) / log(pow((double)InputArgList.STDPDecayFactor, (double)InputArgList.onemsbyTstep))));
+	}
+	getInputfromStruct(MatlabInputStruct, "CurrentDecayFactor", InputArgList.CurrentDecayFactor);
+	getInputfromStruct(MatlabInputStruct, "IExtDecayFactor"   , InputArgList.IExtDecayFactor   );
+	getInputfromStruct(MatlabInputStruct, "IExtScaleFactor"   , InputArgList.IExtScaleFactor   );
+	getInputfromStruct(MatlabInputStruct, "W0"                , InputArgList.W0                );
+	getInputfromStruct(MatlabInputStruct, "MaxSynWeight"      , InputArgList.MaxSynWeight      );
+	getInputfromStruct(MatlabInputStruct, "alpha"             , InputArgList.alpha             );
+	getInputfromStruct(MatlabInputStruct, "StdDev"            , InputArgList.StdDev            );
+
 	// Initializing Time
-	getInputfromStruct(MatlabInputStruct, "Time", InputArgList.Time);
+	getInputfromStruct<int, size_t>(MatlabInputStruct, "Time", InputArgList.Time);
 
 	// Initializing StorageStepSize
-	getInputfromStruct(MatlabInputStruct, "StorageStepSize", InputArgList.StorageStepSize);
+	getInputfromStruct<int, size_t>(MatlabInputStruct, "StorageStepSize", InputArgList.StorageStepSize);
 
 	// Initializing StatusDisplayInterval
-	getInputfromStruct(MatlabInputStruct, "StatusDisplayInterval", InputArgList.StatusDisplayInterval);
+	getInputfromStruct<int, size_t>(MatlabInputStruct, "StatusDisplayInterval", InputArgList.StatusDisplayInterval);
 
 	// Initializing InterestingSyns
 	getInputfromStruct(MatlabInputStruct, "InterestingSyns", InputArgList.InterestingSyns);
