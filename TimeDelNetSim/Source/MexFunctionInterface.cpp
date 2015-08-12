@@ -112,9 +112,9 @@ void takeInputFromMatlabStruct(mxArray* MatlabInputStruct, InputArgs &InputArgLi
 	size_t M = mxGetNumberOfElements(mxGetField(MatlabInputStruct, 0, "NStart"));
 
 	// set Cumpulsory Simulation Parameters
-	getInputfromStruct(MatlabInputStruct, "onemsbyTstep", InputArgList.onemsbyTstep, true);
-	getInputfromStruct(MatlabInputStruct, "NoOfms"      , InputArgList.NoOfms      , true);
-	getInputfromStruct(MatlabInputStruct, "DelayRange"  , InputArgList.DelayRange  , true);
+	getInputfromStruct(MatlabInputStruct, "onemsbyTstep", InputArgList.onemsbyTstep, 1, "is_required");
+	getInputfromStruct(MatlabInputStruct, "NoOfms"      , InputArgList.NoOfms      , 1, "is_required");
+	getInputfromStruct(MatlabInputStruct, "DelayRange"  , InputArgList.DelayRange  , 1, "is_required");
 
 	// set default values of Optional Simulation Parameters
 	InputArgList.StorageStepSize = DEFAULT_STORAGE_STEP;
@@ -166,7 +166,7 @@ void takeInputFromMatlabStruct(mxArray* MatlabInputStruct, InputArgs &InputArgLi
 	// Setting Values for Optional Simulation Algorithm Parameters
 	getInputfromStruct(MatlabInputStruct, "I0"                , InputArgList.I0                );
 	getInputfromStruct(MatlabInputStruct, "STDPDecayFactor"   , InputArgList.STDPDecayFactor   );
-	if (getInputfromStruct(MatlabInputStruct, "STDPMaxWinLen", InputArgList.STDPMaxWinLen, true, true)){
+	if (getInputfromStruct(MatlabInputStruct, "STDPMaxWinLen", InputArgList.STDPMaxWinLen, 3, "is_required", "no_except", "quiet")){
 		InputArgList.STDPMaxWinLen = int(InputArgList.onemsbyTstep*(log(0.001) / log(pow((double)InputArgList.STDPDecayFactor, (double)InputArgList.onemsbyTstep))));
 	}
 	getInputfromStruct(MatlabInputStruct, "CurrentDecayFactor", InputArgList.CurrentDecayFactor);
