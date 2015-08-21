@@ -47,10 +47,10 @@ InputStruct.b = single(b);
 InputStruct.c = single(c);
 InputStruct.d = single(d);
 
-InputStruct.NStart              = int32(NStartVect);
-InputStruct.NEnd                = int32(NEndVect);
+InputStruct.NStart = int32(NStartVect);
+InputStruct.NEnd   = int32(NEndVect);
 InputStruct.InitialState.Weight = single(Weights);
-InputStruct.Delay               = single(Delays);
+InputStruct.Delay  = single(Delays);
 
 InputStruct.V = single(-65*ones(N,1));
 InputStruct.U = single(0.2*InputStruct.V);
@@ -71,7 +71,6 @@ InputStruct.OutputFile = 'SimResults1000DebugSparseLong.mat';
 save('../Data/InputData.mat', 'InputStruct');
 
 % [OutputVarsSparse, StateVarsSparse, FinalStateSparse, InputStateSparse] = TimeDelNetSimMEX_Lib(InputStruct);
-clear functions;
 % Run the program after this
 cd ..
 ! "..\x64\Release_Exe\TimeDelNetSim.exe"
@@ -161,6 +160,7 @@ save('../Data/InputData.mat', 'InputStruct');
 cd ..
 ! "..\x64\Release_Exe\TimeDelNetSim.exe"
 cd MatlabSource
+
 %% Loading Relevant Data
 load('../Data/SimResults1000DebugDetailedfromFinal.mat');
 clear OutputVarsDetailedFinal StateVarsDetailedFinal InputStateDetailedFinal FinalStateDetailedFinal;
@@ -180,7 +180,7 @@ max(abs(StateVarsDetailedFinal.V(:,4000) - StateVarsSparse.V(:,3)))
 
 OutputOptions = { ...
     'Itot', ...
- 	'V', ...
+	'V', ...
  	'U', ...
 	};
 % Clearing InputStruct
@@ -199,7 +199,6 @@ InputStruct.StatusDisplayInterval = int32(2000);
 % save('../Data/InputData.mat', 'InputStruct');
 
 [OutputVarsDetailed, StateVarsDetailed, FinalStateDetailed, InputStateDetailed] = TimeDelNetSim(InputStruct);
-clear functions;
 
 %% Performing Relevant Tests
 max(abs(StateVarsDetailed.V(:,8000) - StateVarsSparse.V(:,5)))
@@ -210,19 +209,9 @@ OutputOptions = {'SpikeList', 'Initial'};
 clear InputStruct;
 
 % Getting Midway state
-InputStruct.a = single(a);
-InputStruct.b = single(b);
-InputStruct.c = single(c);
-InputStruct.d = single(d);
+InputStruct = InputStateSparse;
 
-InputStruct.NStart              = int32(NStartVect);
-InputStruct.NEnd                = int32(NEndVect);
-InputStruct.InitialState.Weight = single(Weights);
-InputStruct.Delay               = single(Delays);
-
-InputStruct.onemsbyTstep          = int32(1);
 InputStruct.NoOfms                = int32(2*60*1000);
-InputStruct.DelayRange            = int32(RecurrentNetParams.DelayRange);
 InputStruct.StorageStepSize       = int32(0);
 InputStruct.OutputControl         = strjoin(OutputOptions);
 InputStruct.StatusDisplayInterval = int32(2000);
