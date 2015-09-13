@@ -55,13 +55,13 @@ InputStruct.Delay  = single(Delays);
 InputStruct.V = single(-65*ones(N,1));
 InputStruct.U = single(0.2*InputStruct.V);
 
-InputStruct.onemsbyTstep              = int32(4);
-InputStruct.NoOfms                    = int32(80*1000);
-InputStruct.DelayRange                = int32(RecurrentNetParams.DelayRange);
-InputStruct.StorageStepSize           = int32(1000);
-InputStruct.OutputControl             = strjoin(OutputOptions);
-InputStruct.StatusDisplayInterval     = int32(8000);
-InputStruct.InitialState.IExtGenState = uint32(30);
+InputStruct.onemsbyTstep                   = int32(4);
+InputStruct.NoOfms                         = int32(80*1000);
+InputStruct.DelayRange                     = int32(RecurrentNetParams.DelayRange);
+InputStruct.StorageStepSize                = int32(1000);
+InputStruct.OutputControl                  = strjoin(OutputOptions);
+InputStruct.StatusDisplayInterval          = int32(8000);
+InputStruct.InitialState.Iext.IExtGenState = uint32(30);
 
 InputStruct.I0 = single(1.3);
 InputStruct.STDPDecayFactor = single(0.85^(1.0 / double(InputStruct.onemsbyTstep)));
