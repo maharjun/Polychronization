@@ -1,4 +1,4 @@
-function [ InputStruct ] = ConvertStatetoInitialCond( StateStruct, timeInstant )
+function [ SingleState ] = getSingleState( StateStruct, timeInstant )
 % CONVERTSTATETOINITIALCOND Converts structs
 %   basically a name conversion Function as such. 
 
@@ -16,25 +16,27 @@ elseif nargin() == 2
 
 end
 
-InputStruct.V = StateStruct.V(:, timeIndex);
-InputStruct.U = StateStruct.U(:, timeIndex);
-InputStruct.Iin = StateStruct.Iin(:, timeIndex);
-InputStruct.WeightDeriv = StateStruct.WeightDeriv(:, timeIndex);
-InputStruct.Weight = StateStruct.Weight(:, timeIndex);
+SingleState.V = StateStruct.V(:, timeIndex);
+SingleState.U = StateStruct.U(:, timeIndex);
+SingleState.Iin = StateStruct.Iin(:, timeIndex);
+SingleState.WeightDeriv = StateStruct.WeightDeriv(:, timeIndex);
+SingleState.Weight = StateStruct.Weight(:, timeIndex);
 
-InputStruct.Iext = StateStruct.Iext(:, timeIndex);
-InputStruct.IExtGenState = StateStruct.IExtGenState(:, timeIndex);
-InputStruct.Time = StateStruct.Time(timeIndex);
+SingleState.Iext.Iext = StateStruct.Iext.Iext(:, timeIndex);
+SingleState.Iext.IExtGenState = StateStruct.Iext.IExtGenState(:, timeIndex);
+SingleState.Iext.IExtNeuron = StateStruct.Iext.IExtNeuron(timeIndex);
 
-InputStruct.CurrentQIndex = StateStruct.CurrentQIndex(timeIndex);
+SingleState.Time = StateStruct.Time(timeIndex);
+
+SingleState.CurrentQIndex = StateStruct.CurrentQIndex(timeIndex);
 if timeDimensionLength == 1
-	InputStruct.SpikeQueue = StateStruct.SpikeQueue;
+	SingleState.SpikeQueue = StateStruct.SpikeQueue;
 else
-	InputStruct.SpikeQueue = StateStruct.SpikeQueue{timeIndex};
+	SingleState.SpikeQueue = StateStruct.SpikeQueue{timeIndex};
 end
 
-InputStruct.LSTNeuron = StateStruct.LSTNeuron(:, timeIndex);
-InputStruct.LSTSyn = StateStruct.LSTSyn(:, timeIndex);
+SingleState.LSTNeuron = StateStruct.LSTNeuron(:, timeIndex);
+SingleState.LSTSyn = StateStruct.LSTSyn(:, timeIndex);
 
 end
 

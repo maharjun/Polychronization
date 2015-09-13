@@ -5,8 +5,9 @@
 #include "..\..\MexMemoryInterfacing\Headers\GenericMexIO.hpp"
 #include "..\..\MexMemoryInterfacing\Headers\LambdaToFunction.hpp"
 #include "..\..\RandomNumGen\Headers\FiltRandomTBB.hpp"
-#include <mex.h>
-#include <matrix.h>
+#include ".\IExtHeaders\IExtCode.hpp"
+
+
 #include <xutility>
 #include <stdint.h>
 #include <vector>
@@ -27,19 +28,17 @@ struct OutOps{
 		CURRENT_QINDS_REQ   = (1 << 1 ), 
 		FINAL_STATE_REQ     = (1 << 2 ),
 		INITIAL_STATE_REQ   = (1 << 3 ), 
-		I_EXT_GEN_STATE_REQ = (1 << 4 ),
-		I_EXT_REQ           = (1 << 5 ),
-		I_IN_REQ            = (1 << 6 ), 
-		I_TOT_REQ           = (1 << 7 ), 
-		LASTSPIKED_NEU_REQ  = (1 << 8 ), 
-		LASTSPIKED_SYN_REQ  = (1 << 9 ), 
-		SPIKE_LIST_REQ      = (1 << 10), 
-		SPIKE_QUEUE_REQ     = (1 << 11), 
-		TIME_REQ            = (1 << 12), 
-		U_REQ               = (1 << 13), 
-		V_REQ               = (1 << 14),
-		WEIGHT_DERIV_REQ    = (1 << 15), 
-		WEIGHT_REQ          = (1 << 16), 
+		I_IN_REQ            = (1 << 4 ), 
+		I_TOT_REQ           = (1 << 5 ), 
+		LASTSPIKED_NEU_REQ  = (1 << 6 ), 
+		LASTSPIKED_SYN_REQ  = (1 << 7 ), 
+		SPIKE_LIST_REQ      = (1 << 8 ), 
+		SPIKE_QUEUE_REQ     = (1 << 9 ), 
+		TIME_REQ            = (1 << 10), 
+		U_REQ               = (1 << 11), 
+		V_REQ               = (1 << 12),
+		WEIGHT_DERIV_REQ    = (1 << 13), 
+		WEIGHT_REQ          = (1 << 14), 
 	};
 };
 
@@ -87,10 +86,11 @@ struct SingleStateStruct{
 	MexVector<float> V;
 	MexVector<float> U;
 	MexVector<float> Iin;
-	MexVector<float> Iext;
 	MexVector<float> WeightDeriv;
+	
+	// IextInterface state variable component
+	IExtInterface::SingleStateStruct IextInterface;
 
-	MexVector<uint32_t> IExtGenState;
 	MexVector<MexVector<int > > SpikeQueue;
 	MexVector<int> LSTNeuron;
 	MexVector<int> LSTSyn;
@@ -102,9 +102,8 @@ struct SingleStateStruct{
 		V(),
 		U(),
 		Iin(),
-		Iext(),
 		WeightDeriv(),
-		IExtGenState(),
+		IextInterface(),
 		SpikeQueue(),
 		LSTNeuron(),
 		LSTSyn() {}
@@ -113,7 +112,6 @@ struct SingleStateStruct{
 };
 
 struct InputArgs{
-	static void IExtFunc(InternalVars &);
 	MexVector<int>   NStart;
 	MexVector<int>   NEnd;
 	// MexVector<float> Weight; This is a state variable and is initialised 
@@ -126,6 +124,9 @@ struct InputArgs{
 	MexVector<float> d;
 
 	MexVector<int> InterestingSyns;
+
+	// IExt Interface Input Variables
+	IExtInterface::InputVarsStruct IextInterface;
 
 	// Initial State
 	SingleStateStruct InitialState;
@@ -143,15 +144,11 @@ struct InputArgs{
 
 	// Optional Simulation Algorithm Parameters
 	float I0;
-	float CurrentDecayFactor;
-	float IExtScaleFactor;
-	float IExtDecayFactor;
+	float CurrentDecayFactor;	
 	float STDPDecayFactor;
 	int   STDPMaxWinLen;
 	float MaxSynWeight;
 	float W0;
-	float alpha;
-	float StdDev;
 
 	InputArgs() :
 		NStart(),
@@ -162,6 +159,7 @@ struct InputArgs{
 		c(),
 		d(),
 		InterestingSyns(),
+		IextInterface(),
 		OutputControlString(),
 		InitialState() {}
 };
@@ -192,14 +190,10 @@ struct InternalVars{
 	// Optional Simulation Algorithm Parameters
 	const float I0;
 	const float CurrentDecayFactor;
-	const float IExtScaleFactor;
-	const float IExtDecayFactor;
 	const float STDPDecayFactor;
 	const int STDPMaxWinLen;
 	const float MaxSynWeight;
 	const float W0;
-	const float alpha;
-	const float StdDev;
 
 	// Scalar State Variables
 	// Time is defined earlier for reasons of initialization sequence
@@ -215,8 +209,10 @@ struct InternalVars{
 	MexVector<float> &U;
 	atomicLongVect Iin;
 	MexVector<float> &WeightDeriv;
-	MexVector<float> &Iext; // made reference cuz Iext is now a state variable
 
+	IExtInterface::InternalVarsStruct IextInterface;
+
+	// Change: remove this. 	
 	XorShiftPlus IExtGen;
 	size_t CurrentGenNeuron;
 	MexVector<MexVector<int> > &SpikeQueue;
@@ -267,7 +263,6 @@ struct InternalVars{
 		Iin                   (N), 
 		// Iin is defined separately as an atomic vect.
 		WeightDeriv           (IArgs.InitialState.WeightDeriv),
-		Iext                  (IArgs.InitialState.Iext),
 		IExtGen               (),
 		CurrentGenNeuron      (0),
 		SpikeQueue            (IArgs.InitialState.SpikeQueue),
@@ -292,13 +287,9 @@ struct InternalVars{
 		I0                 (IArgs.I0),
 		STDPMaxWinLen      (IArgs.STDPMaxWinLen),
 		CurrentDecayFactor (IArgs.CurrentDecayFactor),
-		IExtDecayFactor    (IArgs.IExtDecayFactor),
-		IExtScaleFactor    (IArgs.IExtScaleFactor),
 		STDPDecayFactor    (IArgs.STDPDecayFactor),
 		W0                 (IArgs.W0),
-		MaxSynWeight       (IArgs.MaxSynWeight),
-		alpha              (IArgs.alpha),
-		StdDev             (IArgs.StdDev){
+		MaxSynWeight       (IArgs.MaxSynWeight){
 		
 		// Setting up Network and Neurons
 		Network.resize(M);
@@ -355,41 +346,29 @@ struct InternalVars{
 		//	Iin is already initialized to zero by tbb::zero_allocator<long long>
 		//}
 
-		// Setting Initial Conditions for External Current (Iext)
-		if (Iext.istrulyempty()){
-			Iext.resize(N, 0.0f);
-		}
-		else if (Iext.size() != N){
-			// Show error
-			return;
-		}
-
-		// Setting Initial Conditions for IExt RNo Generator
-		if (IArgs.InitialState.IExtGenState.size() == 1){ // single number seeding
-			IExtGen = XorShiftPlus(IArgs.InitialState.IExtGenState[0]);
-		}
-		else if (IArgs.InitialState.IExtGenState.size() == 4){ // previous state initializing
-			XorShiftPlus::StateStruct tempState;
-			tempState.ConvertVecttoState(IArgs.InitialState.IExtGenState);
-			IExtGen = XorShiftPlus(tempState);
-		}
-		else if (!IArgs.InitialState.IExtGenState.istrulyempty()){ // error
-			// Throw Exception here
-			return;
-		}
-		//else{
-		//	// This has already been acheived by the default constructor
-		//}
-
 		// Setting Initial Conditions for Weight Derivative
 		if (IArgs.InitialState.WeightDeriv.istrulyempty()){
-			WeightDeriv.resize(M, 0);
+			WeightDeriv.resize(M, 0.0f);
 		}
 		else if (IArgs.InitialState.WeightDeriv.size() != M){
 			// Return Exception
 			return;
 		}
 
+		// Initializing InternalVars for IextInternal giving it
+		//   1. The IExtInterface::InternalVarsStruct in InternalVars
+		//   2. The IExtInterface::InputVarsStruct in InputVars
+		//   3. The IExtInterface::SingleStateStruct (Initial State) in InputVars
+		//   4. InputVars itself to take parameters such as N, onemsbyTstep, 
+		//      Noofms etc.
+		
+		IExtInterface::initInternalVariables(
+			IextInterface,
+			IArgs.IextInterface,
+			IArgs.InitialState.IextInterface,
+			IArgs
+		);
+		
 		// Setting Initial Conditions of SpikeQueue
 		if (SpikeQueue.istrulyempty()){
 			SpikeQueue = MexVector<MexVector<int> >(onemsbyTstep * DelayRange, MexVector<int>());
@@ -431,7 +410,8 @@ private:
 struct OutputVarsStruct{
 	MexMatrix<float> WeightOut;
 	MexMatrix<float> Itot;
-	MexVector<int> IExtNeuron;
+
+	IExtInterface::OutputVarsStruct IextInterface;
 
 	struct SpikeListStruct{
 		MexVector<int> SpikeSynInds;
@@ -442,8 +422,7 @@ struct OutputVarsStruct{
 	OutputVarsStruct() :
 		WeightOut(),
 		Itot(),
-		SpikeList(),
-		IExtNeuron(){}
+		SpikeList() {}
 
 	void initialize(const InternalVars &);
 };
@@ -453,9 +432,11 @@ struct StateVarsOutStruct{
 	MexMatrix<float> VOut;
 	MexMatrix<float> UOut;
 	MexMatrix<float> IinOut;
-	MexMatrix<float> IextOut;
 	MexMatrix<float> WeightDerivOut;
-	MexMatrix<uint32_t> IExtGenStateOut;
+
+	// IExt Interface Output State variables
+	IExtInterface::StateOutStruct IextInterface;
+	
 	MexVector<int> TimeOut;
 
 	MexVector<MexVector<MexVector<int> > > SpikeQueueOut;
@@ -468,10 +449,9 @@ struct StateVarsOutStruct{
 		VOut(),
 		UOut(),
 		IinOut(),
-		IextOut(),
 		WeightDerivOut(),
+		IextInterface(),
 		TimeOut(),
-		IExtGenStateOut(),
 		SpikeQueueOut(),
 		CurrentQIndexOut(),
 		LSTNeuronOut(),
