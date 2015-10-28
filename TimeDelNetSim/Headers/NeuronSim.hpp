@@ -33,7 +33,7 @@ struct OutOps{
 		LASTSPIKED_NEU_REQ  = (1 << 6 ), 
 		LASTSPIKED_SYN_REQ  = (1 << 7 ), 
 		SPIKE_LIST_REQ      = (1 << 8 ), 
-		SPIKE_QUEUE_REQ     = (1 << 9 ), 
+		SPIKE_QUEUE_REQ     = (1 <<  9), 
 		TIME_REQ            = (1 << 10), 
 		U_REQ               = (1 << 11), 
 		V_REQ               = (1 << 12),
@@ -165,6 +165,13 @@ struct InputArgs{
 };
 
 struct InternalVars{
+
+	// Compulsory Simulation Parameters
+	size_t onemsbyTstep;
+	size_t NoOfms;
+	size_t DelayRange;
+	
+	// Other Constants
 	size_t N;
 	size_t NExc;
 	size_t M;
@@ -172,11 +179,7 @@ struct InternalVars{
 	size_t i;       //This is the most important loop index that is definitely a state variable
 	                // and plays a crucial role in deciding the index into which the output must be performed
 	size_t Time;    // must be initialized befor beta
-	
-	// Compulsory Simulation Parameters
-	size_t onemsbyTstep;
-	size_t NoOfms;
-	size_t DelayRange;
+	size_t nSteps;  // Included because, it is changed from its default value in case of abortion
 	
 	// Optional Simulation Parameters
 	MexVector<char> OutputControlString;
@@ -246,6 +249,7 @@ struct InternalVars{
 		MExc                  (0),
 		i                     (0),
 		Time                  (IArgs.InitialState.Time),
+		nSteps                (onemsbyTstep*NoOfms),
 		CurrentQIndex         (IArgs.InitialState.CurrentQIndex),
 		OutputControl         (IArgs.OutputControl),
 		OutputControlString   (IArgs.OutputControlString),
@@ -255,7 +259,7 @@ struct InternalVars{
 		Neurons               (M),
 		InterestingSyns       (IArgs.InterestingSyns),
 		V                     (IArgs.InitialState.V),
-		U                     (IArgs.InitialState.U),		
+		U                     (IArgs.InitialState.U),
 		Iin                   (N), 
 		// Iin is defined separately as an atomic vect.
 		WeightDeriv           (IArgs.InitialState.WeightDeriv),
@@ -289,10 +293,10 @@ struct InternalVars{
 		
 		// Setting up Network and Neurons
 		Network.resize(M);
-		MexTransform(IArgs.NStart             .begin(), IArgs.NStart             .end(), Network.begin(), FFL([ ](Synapse &Syn, int   &NStart)->void{Syn.NStart        = NStart       ; }));
-		MexTransform(IArgs.NEnd               .begin(), IArgs.NEnd               .end(), Network.begin(), FFL([ ](Synapse &Syn, int   &NEnd  )->void{Syn.NEnd          = NEnd         ; }));
+		MexTransform(IArgs.NStart.begin(), IArgs.NStart.end(), Network.begin(), FFL([ ](Synapse &Syn, int   &NStart)->void{Syn.NStart        = NStart       ; }));
+		MexTransform(IArgs.NEnd  .begin(), IArgs.NEnd  .end(), Network.begin(), FFL([ ](Synapse &Syn, int   &NEnd  )->void{Syn.NEnd          = NEnd         ; }));
 		MexTransform(IArgs.InitialState.Weight.begin(), IArgs.InitialState.Weight.end(), Network.begin(), FFL([ ](Synapse &Syn, float &Weight)->void{Syn.Weight        = Weight       ; }));
-		MexTransform(IArgs.Delay              .begin(), IArgs.Delay              .end(), Network.begin(), FFL([&](Synapse &Syn, float &Delay )->void{Syn.DelayinTsteps = Delay*IArgs.onemsbyTstep + 0.5f; }));
+		MexTransform(IArgs.Delay .begin(), IArgs.Delay .end(), Network.begin(), FFL([&](Synapse &Syn, float &Delay )->void{Syn.DelayinTsteps = Delay*IArgs.onemsbyTstep + 0.5f; }));
 
 		Neurons.resize(N);
 		MexTransform(IArgs.a.begin(), IArgs.a.end(), Neurons.begin(), FFL([](Neuron &Neu, float &a)->void{Neu.a = a; }));
@@ -404,7 +408,7 @@ struct OutputVarsStruct{
 	OutputVarsStruct() :
 		WeightOut(),
 		Itot(),
-		SpikeList() {}
+		SpikeList(){}
 
 	void initialize(const InternalVars &);
 };
@@ -418,7 +422,7 @@ struct StateVarsOutStruct{
 
 	// IExt Interface Output State variables
 	IExtInterface::StateOutStruct IextInterface;
-	
+
 	MexVector<int> TimeOut;
 
 	MexVector<MexVector<MexVector<int> > > SpikeQueueOut;
