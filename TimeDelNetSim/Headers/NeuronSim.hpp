@@ -417,7 +417,8 @@ struct OutputVarsStruct{
 	struct SpikeListStruct{
 		MexVector<int> SpikeSynInds;
 		MexVector<int> TimeRchdStartInds;
-		SpikeListStruct() : SpikeSynInds(), TimeRchdStartInds(){}
+		MexVector<int> TimeRchd;
+		SpikeListStruct() : SpikeSynInds(), TimeRchdStartInds(), TimeRchd() {}
 	} SpikeList;
 
 	OutputVarsStruct() :
