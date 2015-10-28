@@ -37,7 +37,7 @@ d(Ninh) = 2;
 
 %% Getting Long Sparse Vector
 
-OutputOptions = {'FSF', 'Initial'};
+OutputOptions = {'SpikeList', 'FSF', 'Initial'};
 % Clearing InputStruct
 clear InputStruct;
 
