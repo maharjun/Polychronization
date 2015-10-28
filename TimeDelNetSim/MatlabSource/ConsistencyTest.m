@@ -217,4 +217,4 @@ save('../Data/InputData.mat', 'InputStruct');
 clear functions;
 
 %% Plotting SpikeList
-PlotSpikeList(58, 60, InputStruct, StateVarsSpikeList.Time, OutputVarsSpikeList.SpikeList);
+PlotSpikeList(58, 60, InputStruct, OutputVarsSpikeList.SpikeList);
