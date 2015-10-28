@@ -7,7 +7,19 @@
 #include <chrono>
 #include <type_traits>
 #include <iostream>
-#include "..\..\MexMemoryInterfacing\Headers\MexMem.hpp"
+
+#if defined TIME_DEL_NET_SIM_AS_SUB
+	#define HEADER_PATHS_TDNS ..
+#elif !defined HEADER_PATHS_TDNS
+	#define HEADER_PATHS_TDNS .
+#endif
+
+#define SETQUOTE(A) #A
+#define JOIN_STRING(A,B,C) SETQUOTE(A##B##C)
+#define JOIN_LIB_PATH(PRE, CENT, POST) JOIN_STRING(PRE, CENT, POST)
+
+#include JOIN_LIB_PATH(..\..\, HEADER_PATHS_TDNS, \MexMemoryInterfacing\Headers\MexMem.hpp)
+
 #include "MexFunctionInterface.cpp"
 
 using namespace std;
@@ -48,7 +60,7 @@ int main(){
 	OutputFilePtr = matOpen(OutputFilePath, "r");
 	while (OutputFilePtr){
 		char UserConfirmResp;
-		std::cout << "File Exists. Sure about rewrite? : " << std::flush;
+		std::cout << "The following file already exists - \n" << std::endl << "    " << OutFileName << std::endl << "\nSure about rewrite? : " << std::flush;
 		std::cin >> UserConfirmResp;
 		if ((UserConfirmResp | 32) == 'y'){
 			matClose(OutputFilePtr);

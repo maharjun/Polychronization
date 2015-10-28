@@ -1,12 +1,24 @@
 #ifndef NEURONSIM_HPP
 #define NEURONSIM_HPP
+
+#if defined TIME_DEL_NET_SIM_AS_SUB
+	#define HEADER_PATHS_TDNS ..
+#elif !defined HEADER_PATHS_TDNS
+	#define HEADER_PATHS_TDNS .
+#endif
+
 #include "Network.hpp"
-#include "..\..\MexMemoryInterfacing\Headers\MexMem.hpp"
-#include "..\..\MexMemoryInterfacing\Headers\GenericMexIO.hpp"
-#include "..\..\MexMemoryInterfacing\Headers\LambdaToFunction.hpp"
-#include "..\..\RandomNumGen\Headers\FiltRandomTBB.hpp"
+
 #include ".\IExtHeaders\IExtCode.hpp"
 
+#define SETQUOTE(A) #A
+#define JOIN_STRING(A,B,C) SETQUOTE(A##B##C)
+#define JOIN_LIB_PATH(PRE, CENT, POST) JOIN_STRING(PRE, CENT, POST)
+
+#include JOIN_LIB_PATH(..\..\, HEADER_PATHS_TDNS, \MexMemoryInterfacing\Headers\MexMem.hpp)
+#include JOIN_LIB_PATH(..\..\, HEADER_PATHS_TDNS, \MexMemoryInterfacing\Headers\GenericMexIO.hpp)
+#include JOIN_LIB_PATH(..\..\, HEADER_PATHS_TDNS, \MexMemoryInterfacing\Headers\LambdaToFunction.hpp)
+#include JOIN_LIB_PATH(..\..\, HEADER_PATHS_TDNS, \RandomNumGen\Headers\FiltRandomTBB.hpp)
 
 #include <xutility>
 #include <stdint.h>
@@ -180,7 +192,8 @@ struct InternalVars{
 	                // and plays a crucial role in deciding the index into which the output must be performed
 	size_t Time;    // must be initialized befor beta
 	size_t nSteps;  // Included because, it is changed from its default value in case of abortion
-	
+	uint64_t NoOfSpikes;
+
 	// Optional Simulation Parameters
 	MexVector<char> OutputControlString;
 	size_t OutputControl;
@@ -250,6 +263,7 @@ struct InternalVars{
 		i                     (0),
 		Time                  (IArgs.InitialState.Time),
 		nSteps                (onemsbyTstep*NoOfms),
+		NoOfSpikes            (0),
 		CurrentQIndex         (IArgs.InitialState.CurrentQIndex),
 		OutputControl         (IArgs.OutputControl),
 		OutputControlString   (IArgs.OutputControlString),
@@ -396,6 +410,7 @@ struct InternalVars{
 struct OutputVarsStruct{
 	MexMatrix<float> WeightOut;
 	MexMatrix<float> Itot;
+	MexVector<uint64_t> NoOfSpikes;
 
 	IExtInterface::OutputVarsStruct IextInterface;
 
@@ -408,6 +423,8 @@ struct OutputVarsStruct{
 	OutputVarsStruct() :
 		WeightOut(),
 		Itot(),
+		NoOfSpikes(),
+		IextInterface(),
 		SpikeList(){}
 
 	void initialize(const InternalVars &);

@@ -7,17 +7,28 @@
 #include <chrono>
 #include <cmath>
 
+#if defined TIME_DEL_NET_SIM_AS_SUB
+	#define HEADER_PATHS_TDNS ..
+#elif !defined HEADER_PATHS_TDNS
+	#define HEADER_PATHS_TDNS .
+#endif
+
+#define SETQUOTE(A) #A
+#define JOIN_STRING(A,B,C) SETQUOTE(A##B##C)
+#define JOIN_LIB_PATH(PRE, CENT, POST) JOIN_STRING(PRE, CENT, POST)
+
 #include "..\Headers\Network.hpp"
 #include "..\Headers\NeuronSim.hpp"
 
 #include "..\Headers\IExtHeaders\IExtCode.hpp"
 
-#include "..\..\MexMemoryInterfacing\Headers\MexMem.hpp"
-#include "..\..\MexMemoryInterfacing\Headers\GenericMexIO.hpp"
-#include "..\..\MexMemoryInterfacing\Headers\InterruptHandling.hpp"
-#include "..\..\MexMemoryInterfacing\Headers\LambdaToFunction.hpp"
+#include JOIN_LIB_PATH(..\..\, HEADER_PATHS_TDNS, \MexMemoryInterfacing\Headers\MexMem.hpp)
+#include JOIN_LIB_PATH(..\..\, HEADER_PATHS_TDNS, \MexMemoryInterfacing\Headers\GenericMexIO.hpp)
+#include JOIN_LIB_PATH(..\..\, HEADER_PATHS_TDNS, \MexMemoryInterfacing\Headers\InterruptHandling.hpp)
+#include JOIN_LIB_PATH(..\..\, HEADER_PATHS_TDNS, \MexMemoryInterfacing\Headers\LambdaToFunction.hpp)
 
-#include "..\..\RandomNumGen\Headers\FiltRandomTBB.hpp"
+#include JOIN_LIB_PATH(..\..\, HEADER_PATHS_TDNS, \RandomNumGen\Headers\FiltRandomTBB.hpp)
+
 #include <emmintrin.h>
 #include <smmintrin.h>
 
@@ -225,6 +236,7 @@ void OutputVarsStruct::initialize(const InternalVars &IntVars){
 			this->WeightOut = MexMatrix<float>(0, IntVars.InterestingSyns.size());
 	if (OutputControl & OutOps::I_TOT_REQ)
 		this->Itot = MexMatrix<float>(0, N);
+	this->NoOfSpikes = MexVector<uint64_t>(0);
 
 	// Initializing Output Variables for IextInterface
 	this->IextInterface.initialize(IntVars.IextInterface, IntVars);
@@ -313,6 +325,10 @@ void InternalVars::DoOutput(StateVarsOutStruct &StateOut, OutputVarsStruct &OutV
 			for (int j = 0; j < N; ++j)
 				OutVars.Itot.lastRow()[j] = this->IextInterface.Iext[j] + (float)(Iin[j]) / (1i64 << 32);
 		}
+
+		// Storing NoOfSpikes
+		OutVars.NoOfSpikes.push_back(NoOfSpikes);
+		NoOfSpikes = 0;
 	}
 
 	// Storing Spike List (Only if StorageStepSize == 0
@@ -553,6 +569,7 @@ void SimulateParallel(
 	size_t &OutputControl       = IntVars.OutputControl;
 	size_t &i                   = IntVars.i;
 	size_t &nSteps              = IntVars.nSteps;
+	uint64_t &NoOfSpikes        = IntVars.NoOfSpikes;
 	size_t &NExc                = IntVars.NExc;
 	size_t &MExc                = IntVars.MExc;
 
@@ -745,6 +762,7 @@ void SimulateParallel(
 		}
 
 		maxSpikeno += QueueSubEnd; // Added the number of spikes that arrived in the current time instant
+		NoOfSpikes += QueueSubEnd;
 		
 		// Epilepsy Check
 		if (QueueSubEnd > (2*M) / (5)){
