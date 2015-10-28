@@ -12,10 +12,20 @@
 
 #include "..\Headers\IExtHeaders\IExtCode.hpp"
 
-#include "..\..\MexMemoryInterfacing\Headers\MexMem.hpp"
-#include "..\..\MexMemoryInterfacing\Headers\GenericMexIO.hpp"
-#include "..\..\MexMemoryInterfacing\Headers\InterruptHandling.hpp"
-#include "..\..\MexMemoryInterfacing\Headers\LambdaToFunction.hpp"
+#if defined TIME_DEL_NET_SIM_AS_SUB
+	#define HEADER_PATHS_TDNS ..
+#elif !defined HEADER_PATHS_TDNS
+	#define HEADER_PATHS_TDNS .
+#endif
+
+#define SETQUOTE(A) #A
+#define JOIN_STRING(A,B,C) SETQUOTE(A##B##C)
+#define JOIN_LIB_PATH(PRE, CENT, POST) JOIN_STRING(PRE, CENT, POST)
+
+#include JOIN_LIB_PATH(..\..\, HEADER_PATHS_TDNS, \MexMemoryInterfacing\Headers\MexMem.hpp)
+#include JOIN_LIB_PATH(..\..\, HEADER_PATHS_TDNS, \MexMemoryInterfacing\Headers\GenericMexIO.hpp)
+#include JOIN_LIB_PATH(..\..\, HEADER_PATHS_TDNS, \MexMemoryInterfacing\Headers\InterruptHandling.hpp)
+#include JOIN_LIB_PATH(..\..\, HEADER_PATHS_TDNS, \MexMemoryInterfacing\Headers\LambdaToFunction.hpp)
 
 using namespace std;
 
@@ -219,6 +229,7 @@ mxArray * putOutputToMatlabStruct(OutputVarsStruct &Output){
 		"WeightOut",
 		"Itot",
 		"Iext",
+		"NoOfSpikes",
 		"SpikeList",
 		nullptr
 	};
@@ -233,6 +244,8 @@ mxArray * putOutputToMatlabStruct(OutputVarsStruct &Output){
 	mxSetField(ReturnPointer, 0, "WeightOut", assignmxArray(Output.WeightOut, mxSINGLE_CLASS));
 	// Assigning Itot
 	mxSetField(ReturnPointer, 0, "Itot", assignmxArray(Output.Itot, mxSINGLE_CLASS));
+	// Assigning NoOfSpikes
+	mxSetField(ReturnPointer, 0, "NoOfSpikes", assignmxArray(Output.NoOfSpikes, mxUINT64_CLASS));
 	// Assigning Output variables for IExtInterface
 	mxArrayPtr IExtOutVarsStruct = IExtInterface::putOutputVarstoMATLABStruct(Output.IextInterface);
 	mxSetField(ReturnPointer, 0, "Iext", IExtOutVarsStruct);
