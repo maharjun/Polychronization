@@ -1,6 +1,7 @@
 rmpath('..\..\x64\Debug_Lib');
 addpath('..\..\x64\Release_Lib');
 % addpath('export_fig-master');
+addpath ..\..\MexMemoryInterfacing\MatlabSource\
 
 %%
 rng('default');
@@ -220,4 +221,4 @@ save('../Data/InputData.mat', 'InputStruct');
 clear functions;
 
 %% Plotting SpikeList
-PlotSpikeList(70, 74, InputStruct, StateVarsSpikeList.Time, OutputVarsSpikeList.SpikeList);
+PlotSpikeList(70, 74, InputStruct, OutputVarsSpikeList.SpikeList);
